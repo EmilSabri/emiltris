@@ -206,7 +206,10 @@ var SBlock = [4][4]image.Point{SBlock0, SBlock1, SBlock2, SBlock3}
 var ZBlock = [4][4]image.Point{ZBlock0, ZBlock1, ZBlock2, ZBlock3}
 var JBlock = [4][4]image.Point{JBlock0, JBlock1, JBlock2, JBlock3}
 var LBlock = [4][4]image.Point{LBlock0, LBlock1, LBlock2, LBlock3}
+
 var Blocks = [...][4][4]image.Point{IBlock, OBlock, TBlock, SBlock, ZBlock, JBlock, LBlock}
+
+//var Blocks = [...][4][4]image.Point{ZBlock, ZBlock, ZBlock, ZBlock, ZBlock, ZBlock, ZBlock}
 
 func InitQueue() {
 	for i := 0; i < 5; i++ {
@@ -216,6 +219,13 @@ func InitQueue() {
 
 func randBlock() int {
 	return random.Int() % 7
+}
+
+func PopQueue() int {
+	newBlock := Queue[QueueHead]
+	Queue[QueueHead] = randBlock()
+	QueueHead = (QueueHead + 1) % 5
+	return newBlock
 }
 
 // Given a row number all rows above it will shift down by 1
@@ -318,6 +328,7 @@ func (b *Block) MoveDown(speed int) {
 	}
 }
 
+/*
 // Moves the block to the lowest level
 func (b *Block) HardDrop() {
 	// Get the max  y value out of all the points and drop the piece
@@ -325,41 +336,95 @@ func (b *Block) HardDrop() {
 	maxY := 0
 	deltaY := 0
 	for _, point := range b.Piece {
-		x, y := point.X+b.X, point.Y+b.Y
+		x, y := point.X+b.X, b.Y
 
 		// Given the point (x,y) go down the column to find lowest level
-		for i := y; i >= 0; i-- {
-			fmt.Print("i: ", i)
+		fmt.Println("(x,y):", x, y)
+		for i := y - 1; i >= 0; i-- {
 			if board[i][x] == true {
 				if i >= maxY {
 					maxY = i
 					deltaY = y - i - 1
 				}
+				break..
+
 			} else if i == 0 {
 				if i >= maxY {
 					maxY = i
 					deltaY = y
+
 				}
 			}
 		}
 	}
 
-	b.Y = b.Y - deltaY
+	fmt.Println("HardDrop()")
+	fmt.Println("b.Y", b.Y)
+	fmt.Println("deltaY:", deltaY)
+
+	if b.Y-deltaY < 0 {
+		b.Y = 0
+	} else {
+		b.Y = b.Y - deltaY
+	}
+
+	fmt.Println("b.Y", b.Y)
+	fmt.Println()
+}
+*/
+// Moves the block to the lowest row possible
+func (b *Block) HardDrop() {
+	deltaY := b.Y + 5
+	for _, point := range b.Piece {
+		x, y := point.X+b.X, point.Y+b.Y
+
+		for i := y - 1; i >= 0; i-- {
+			if board[i][x] == true {
+				if deltaY > y-i-1 {
+					deltaY = y - i - 1
+				}
+				break
+			} else if i == 0 {
+				if deltaY > y {
+					deltaY = b.Y
+				}
+			}
+		}
+	}
+
+	fmt.Println("HardDrop()")
+	fmt.Println("b.Y", b.Y)
+	fmt.Println("deltaY:", deltaY)
+
+	if b.Y-deltaY < 0 {
+		b.Y = 0
+	} else {
+		b.Y = b.Y - deltaY
+	}
+
+	fmt.Println("b.Y", b.Y)
+	fmt.Println()
 }
 
 // Does work when a block lands and returns a new block for the player
 func (b *Block) Landed() int {
 	// Paint the board true on the points where the block landed
+
+	//fmt.Println("B.X,B.Y:", b.X, b.Y)
 	for _, point := range b.Piece {
 		x, y := point.X+b.X, point.Y+b.Y
+		//fmt.Println("x,y:", x, y)
 		board[y][x] = true
 	}
 
+	/*
+		for _, row := range board {
+			fmt.Println(row)
+		}
+	*/
+
 	// Do stuff to queue
-	newBlock := Queue[QueueHead]
-	Queue[QueueHead] = randBlock()
-	QueueHead = (QueueHead + 1) % 5
-	return newBlock
+	return PopQueue()
 }
 
 // ---------------------------
@@ -376,8 +441,9 @@ func paintBoard(piece [4]image.Point, x_shift, y_shift int) {
 	}
 }
 
-func printBoard() {
-	for _, row := range board {
+func PrintBoard() {
+	for i := 19; i >= 0; i-- {
+		row := board[i]
 		fmt.Println(row)
 	}
 }
