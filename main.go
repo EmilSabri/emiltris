@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/EmilSabri/emiltris/library"
 	"github.com/EmilSabri/emiltris/tetris"
 	//"image"
 	//"os"
@@ -20,6 +21,20 @@ var cellwidth int = 34
 
 var blockColors [7]color.RGBA = [...]color.RGBA{colornames.Lightblue, colornames.Yellow, colornames.Purple, colornames.Green, colornames.Red, colornames.Orange, colornames.Blue}
 
+type Cell struct {
+	x, y  int
+	color color.RGBA
+}
+
+func insertCells(b *tetris.Block, bType int, l *list.List) {
+	color := blockColors[bType]
+	for _, point := range b.Piece {
+		x, y := point.X+b.X, point.Y+b.Y
+		cell := list.Cell{x, y, color}
+		l.Insert(cell)
+	}
+}
+
 func drawBlock(block tetris.Block, imd *imdraw.IMDraw) {
 	//imd.Reset()
 	//imd.Color = colornames.Red
@@ -32,6 +47,35 @@ func drawBlock(block tetris.Block, imd *imdraw.IMDraw) {
 		imd.Push(pixel.V(float64(x), float64(y)), pixel.V(float64(x+cellwidth), float64(y+cellwidth)))
 		imd.Rectangle(0)
 	}
+}
+
+func drawCells(cells *list.List, imdCells *imdraw.IMDraw) {
+	for cell := cells.Front(); cell != nil; cell = cell.Next() {
+		imdCells.Color = cell.Color
+		x := cell.X * cellwidth
+		y := cell.Y * cellwidth
+		imdCells.Push(pixel.V(float64(x), float64(y)), pixel.V(float64(x+cellwidth), float64(y+cellwidth)))
+		imdCells.Rectangle(0)
+	}
+}
+
+func drawBox(x, y int, imdBoard *imdraw.IMDraw) {
+	x *= cellwidth
+	y *= cellwidth
+
+	imdBoard.Color = colornames.Black
+	imdBoard.Push(pixel.V(float64(x), float64(y)), pixel.V(float64(x+cellwidth), float64(y+cellwidth)))
+	imdBoard.Rectangle(0)
+
+	imdBoard.Color = colornames.Blueviolet
+	imdBoard.Push(pixel.V(float64(x), float64(y)), pixel.V(float64(x+cellwidth), float64(y)))
+	imdBoard.Line(3)
+	imdBoard.Push(pixel.V(float64(x+cellwidth), float64(y)), pixel.V(float64(x+cellwidth), float64(y+cellwidth)))
+	imdBoard.Line(3)
+	imdBoard.Push(pixel.V(float64(x), float64(y)), pixel.V(float64(x), float64(y+cellwidth)))
+	imdBoard.Line(3)
+	imdBoard.Push(pixel.V(float64(x), float64(y+cellwidth)), pixel.V(float64(x+cellwidth), float64(y+cellwidth)))
+	imdBoard.Line(3)
 }
 
 func drawQueue(imd *imdraw.IMDraw) {
@@ -58,23 +102,33 @@ func drawSwapped(block *tetris.Block, imdSwapped *imdraw.IMDraw, xMax, yMax floa
 
 }
 
+func drawBoard(imdBoard *imdraw.IMDraw, row int) {
+	imdBoard.Color = colornames.Black
+	imdBoard.Push(pixel.V(float64(0), float64(0)), pixel.V(float64(10*cellwidth), float64(20*cellwidth)))
+	imdBoard.Rectangle(0)
+	imdBoard.Color = colornames.Blueviolet
+	for i := 0; i < 11; i++ {
+		x := i * cellwidth
+		y := 20 * cellwidth
+		imdBoard.Push(pixel.V(float64(x), float64(0)), pixel.V(float64(x), float64(y)))
+		imdBoard.Line(3)
+	}
+	for j := 0; j < row; j++ {
+		x := 10 * cellwidth
+		y := j * cellwidth
+		imdBoard.Push(pixel.V(float64(0), float64(y)), pixel.V(float64(x), float64(y)))
+		imdBoard.Line(3)
+	}
+}
+
 /*
-func drawQueue(imd *imdraw.IMDraw) {
-	// Iterate over each block in the queue
-	for i := 0; i < 5; i++ {
-		b := tetris.Blocks[(i+tetris.QueueHead)%5]
-
-		// Draw the block
-		for _, point := range b[0] {
-			x := (point.X + 1) * cellwidth
-			y := (point.Y + (i * 3) + 1) * cellwidth
-
-			imd.Push(pixel.V(float64(x), float64(y)), pixel.V(float64(x+cellwidth), float64(y+cellwidth)))
-			imd.Rectangle(0)
-		}
+func drawClear(imdBoard *imdraw.IMDraw, rows []int) {
+	for _, y := range rows {
+		for _, x :=
 	}
 }
 */
+
 func run() {
 
 	// Struct to setup the window configuration
@@ -97,12 +151,9 @@ func run() {
 	// Build board with grids
 	var cellwidth int = int(gameCanv.Bounds().Max.Y) / 20
 	imdBoard := imdraw.New(nil)
+	drawBoard(imdBoard, 21)
 
-	imdBoard.Color = colornames.Black
-	imdBoard.Push(pixel.V(float64(0), float64(0)), pixel.V(float64(10*cellwidth), float64(20*cellwidth)))
-	imdBoard.Rectangle(0)
-	imdBoard.Color = colornames.Blueviolet
-	for i := 0; i < 20; i++ {
+	/*for i := 0; i < 20; i++ {
 		for j := 0; j < 10; j++ {
 			x := j * cellwidth // + int((gameCanv.Bounds().Max.X / float64(2))) - cellwidth*5
 			y := i * cellwidth
@@ -116,6 +167,10 @@ func run() {
 			imdBoard.Line(3)
 		}
 	}
+	*/
+
+	imdCells := imdraw.New(nil)
+	cells := list.New()
 
 	// Block Queue
 	xMin, yMin := gameCanv.Bounds().Min.X, gameCanv.Bounds().Min.Y
@@ -139,16 +194,34 @@ func run() {
 
 	// ------------------------------
 	drop_tick := time.Tick(925 * time.Millisecond)
+
+	var (
+		frames = 0
+		second = time.Tick(time.Second)
+	)
+
+	drawQueue(imdQueue)
+	imdQueue.Draw(queueCanv)
+	queueCanv.Draw(gameCanv, pixel.IM.Moved(pixel.Vec{480, 520}))
+
+	drawSwapped(swappedBlock, imdSwapped, xMax, 0)
+	imdSwapped.Draw(gameCanv)
+
 	for !win.Closed() {
+		imdBoard.Draw(gameCanv)
 		imdBlock := imdraw.New(nil)
 		imdBlock.Reset()
 		imdBlock.Color = blockColors[curBlockType]
 
 		// Drops block every drop_tick amount of time
 
+		frames++
 		select {
 		case <-drop_tick:
 			curBlock.MoveDown(0)
+		case <-second:
+			win.SetTitle(fmt.Sprintf("%s | FPS: %d", cfg.Title, frames))
+			frames = 0
 		default:
 		}
 
@@ -169,11 +242,47 @@ func run() {
 		// Hard drop
 		if win.JustPressed(pixelgl.KeySpace) {
 			curBlock.HardDrop()
-			fmt.Println("curBlock.Y", curBlock.Y)
-			drawBlock(*curBlock, imdBoard)
-			curBlockType = curBlock.Landed()
+			insertCells(curBlock, curBlockType, &cells)
 
+			rows := curBlock.ClearBoard() // make tetris.ClearBoard a method
+
+			if rows != nil {
+				imdCells.Reset()
+				fmt.Println("Rows Cleared:", rows)
+				//fmt.Println("Len Before:", cells.Len())
+				// turn into function call
+				for cell := cells.Front(); cell != nil; cell = cell.Next() {
+					for _, r := range rows {
+						if cell.Y == r { // Remove cells if they're in the same row as rows
+							//imdCells.Color = colornames.Blueviolet
+							//drawBox(cell.X, cell.Y, imdCells)
+							cells.Remove(list.Cell{cell.X, cell.Y, cell.Color})
+							break
+						} else if cell.Y > r { // Drop the cells.y value if they are above the highest cleared point by len(rows)
+							//fmt.Print(" Cell.Y: ", cell.Y, " ")
+							cell.Y = cell.Y - len(rows)
+							break
+						}
+					}
+
+				}
+
+				// Update the board above the cells with empty
+				drawBoard(imdCells, 21)
+				// fmt.Println("Len After:", cells.Len())
+				// Draw every point in cells to imdCells
+				for cell := cells.Front(); cell != nil; cell = cell.Next() {
+					fmt.Println("Cell: (", cell.X, ", ", cell.Y, ") ")
+				}
+			}
+
+			drawCells(&cells, imdCells)
+			curBlockType = curBlock.Landed()
 			curBlock = tetris.NewBlock(curBlockType, 5, 18, 0)
+
+			drawQueue(imdQueue)
+			imdQueue.Draw(queueCanv)
+			queueCanv.Draw(gameCanv, pixel.IM.Moved(pixel.Vec{480, 520}))
 		} else if win.Pressed(pixelgl.KeyDown) { // Soft drop -- Change later to adjust for settings
 			curBlock.MoveDown(-1)
 		}
@@ -194,17 +303,25 @@ func run() {
 			}
 			swappedBlock.X, swappedBlock.Y = 2, 2
 
+			// Swap slows is bottle neck in performance
+			drawSwapped(swappedBlock, imdSwapped, xMax, 0)
+			imdSwapped.Draw(gameCanv)
+
+			//fmt.Println("ActiveRow: ", tetris.GetActiveRow())
+			//tetris.PrintBoard()
+
 			fmt.Println("Shift!")
 		}
 
-		drawSwapped(swappedBlock, imdSwapped, xMax, 0)
-		imdBoard.Draw(gameCanv)
-		imdSwapped.Draw(gameCanv)
-		drawBlock(*curBlock, imdBlock)
+		imdCells.Draw(gameCanv)        // The cells currently placed on the board
+		drawBlock(*curBlock, imdBlock) // Used for drawing the current block as it drops/moves
 		imdBlock.Draw(gameCanv)
-		drawQueue(imdQueue)
-		imdQueue.Draw(queueCanv)
-		queueCanv.Draw(gameCanv, pixel.IM.Moved(pixel.Vec{480, 520}))
+		//drawQueue(imdQueue)
+		//imdQueue.Draw(queueCanv)
+		//queueCanv.Draw(gameCanv, pixel.IM.Moved(pixel.Vec{480, 520}))
+		//drawSwapped(swappedBlock, imdSwapped, xMax, 0)
+		//imdSwapped.Draw(gameCanv)
+
 		gameCanv.Draw(win, pixel.IM.Moved(win.Bounds().Center()))
 		win.Update()
 	}

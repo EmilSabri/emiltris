@@ -11,8 +11,7 @@ const boardHeight = 20
 const boardWidth = 10
 
 var board = [boardHeight + 1][boardWidth + 1]bool{}
-var Board = board
-var activeRow int = boardHeight - 1 // Heighest row (smallest y) with a block in it
+var activeRow int = 0 // Heighest row (smallest y) with a block in it
 var Queue [5]int
 var QueueHead int = 0
 var random = rand.New((rand.NewSource(time.Now().UnixNano())))
@@ -231,26 +230,30 @@ func PopQueue() int {
 // Given a row number all rows above it will shift down by 1
 // 1 <= row <= BoardHeight - 1
 func clear(row int) {
-	if row == 1 { // Very top most row will having nothing to shift. Set all cells to false
+	if row == 19 { // Very top most row will having nothing to shift. Set all cells to false
 		for i := 0; i < boardWidth; i++ {
 			board[row][i] = false
 		}
 	} else {
-		for y := row; y >= activeRow; y-- {
+		for y := row; y <= 18; y++ {
 			for x := 0; x < boardWidth; x++ {
-				board[y][x] = board[y-1][x]
+				board[y][x] = board[y+1][x]
 			}
 		}
 	}
 
-	if activeRow != boardHeight {
-		activeRow++
+	if activeRow > 0 {
+		activeRow--
 	}
 }
 
-func clearBoard(b *Block) {
+func (b *Block) ClearBoard() []int {
+
+	var cleared_rows []int
+
 	// Get rows where the block landed
-	lower, higher := b.Piece[0].Y, b.Piece[0].Y
+	lower := b.Piece[0].Y
+	higher := lower
 	for _, point := range b.Piece {
 		if point.Y < lower {
 			lower = point.Y
@@ -260,23 +263,25 @@ func clearBoard(b *Block) {
 		}
 	}
 
-	fmt.Println("lower", lower, "higher", higher)
+	//fmt.Println("lower", lower, "higher", higher)
 	// Check which rows can be cleared
 	for y := lower; y <= higher; y++ {
 		cnt := 0
-		for x := 0; x <= boardWidth; x++ {
-			if board[y][x] == true {
+		for x := 0; x < boardWidth; x++ {
+			if board[y+b.Y][x] == true {
 				cnt++
 			}
 		}
-
+		//PrintBoard()
 		// Clears that row (sets everything above it down by 1)
 		if cnt == boardWidth {
+			cleared_rows = append(cleared_rows, y)
 			// board[y][boardWidth] = true
 			clear(y)
 		}
 	}
 
+	return cleared_rows
 }
 
 //------------------------------------------
@@ -328,50 +333,15 @@ func (b *Block) MoveDown(speed int) {
 	}
 }
 
-/*
-// Moves the block to the lowest level
-func (b *Block) HardDrop() {
-	// Get the max  y value out of all the points and drop the piece
-	// by the delta Y
-	maxY := 0
-	deltaY := 0
+func updateActiveRow(b *Block) {
 	for _, point := range b.Piece {
-		x, y := point.X+b.X, b.Y
-
-		// Given the point (x,y) go down the column to find lowest level
-		fmt.Println("(x,y):", x, y)
-		for i := y - 1; i >= 0; i-- {
-			if board[i][x] == true {
-				if i >= maxY {
-					maxY = i
-					deltaY = y - i - 1
-				}
-				break..
-
-			} else if i == 0 {
-				if i >= maxY {
-					maxY = i
-					deltaY = y
-
-				}
-			}
+		y := point.Y + b.Y
+		if y > activeRow {
+			activeRow = y
 		}
 	}
-
-	fmt.Println("HardDrop()")
-	fmt.Println("b.Y", b.Y)
-	fmt.Println("deltaY:", deltaY)
-
-	if b.Y-deltaY < 0 {
-		b.Y = 0
-	} else {
-		b.Y = b.Y - deltaY
-	}
-
-	fmt.Println("b.Y", b.Y)
-	fmt.Println()
 }
-*/
+
 // Moves the block to the lowest row possible
 func (b *Block) HardDrop() {
 	deltaY := b.Y + 5
@@ -392,9 +362,9 @@ func (b *Block) HardDrop() {
 		}
 	}
 
-	fmt.Println("HardDrop()")
-	fmt.Println("b.Y", b.Y)
-	fmt.Println("deltaY:", deltaY)
+	//fmt.Println("HardDrop()")
+	//fmt.Println("b.Y", b.Y)
+	//fmt.Println("deltaY:", deltaY)
 
 	if b.Y-deltaY < 0 {
 		b.Y = 0
@@ -402,26 +372,19 @@ func (b *Block) HardDrop() {
 		b.Y = b.Y - deltaY
 	}
 
-	fmt.Println("b.Y", b.Y)
-	fmt.Println()
+	//fmt.Println("b.Y", b.Y)
+	//fmt.Println()
+
+	updateActiveRow(b)
+
+	paintBoard(b)
 }
 
 // Does work when a block lands and returns a new block for the player
 func (b *Block) Landed() int {
 	// Paint the board true on the points where the block landed
 
-	//fmt.Println("B.X,B.Y:", b.X, b.Y)
-	for _, point := range b.Piece {
-		x, y := point.X+b.X, point.Y+b.Y
-		//fmt.Println("x,y:", x, y)
-		board[y][x] = true
-	}
-
-	/*
-		for _, row := range board {
-			fmt.Println(row)
-		}
-	*/
+	//paintBoard(b)
 
 	// Do stuff to queue
 	return PopQueue()
@@ -434,17 +397,33 @@ func NewBlock(bType, x, y, r int) *Block {
 }
 
 // Draws the pieces to the board state
-func paintBoard(piece [4]image.Point, x_shift, y_shift int) {
-	for _, point := range piece {
-		x, y := point.X+x_shift, point.Y+y_shift
+func paintBoard(b *Block) {
+	for _, point := range b.Piece {
+		x, y := point.X+b.X, point.Y+b.Y
 		board[y][x] = true
 	}
 }
 
+func GetActiveRow() int {
+	return activeRow
+}
+
+func GetBoard() [21][11]bool {
+	return board
+}
+
 func PrintBoard() {
 	for i := 19; i >= 0; i-- {
-		row := board[i]
-		fmt.Println(row)
+		fmt.Print("[|")
+		for j := 0; j < 10; j++ {
+			cell := board[i][j]
+			if cell == false {
+				fmt.Print(" - |")
+			} else {
+				fmt.Print(" + |")
+			}
+		}
+		fmt.Println("]")
 	}
 }
 
