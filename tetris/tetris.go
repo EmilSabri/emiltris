@@ -12,9 +12,6 @@ const boardWidth = 10
 
 var board = [boardHeight + 1][boardWidth + 1]bool{}
 var activeRow int = 0 // Heighest row (smallest y) with a block in it
-var Queue [5]int
-var QueueHead int = 0
-var random = rand.New((rand.NewSource(time.Now().UnixNano())))
 
 var IBlockLeft = [4]image.Point{
 	image.Pt(-1, 0),
@@ -210,9 +207,16 @@ var Blocks = [...][4][4]image.Point{IBlock, OBlock, TBlock, SBlock, ZBlock, JBlo
 
 //var Blocks = [...][4][4]image.Point{ZBlock, ZBlock, ZBlock, ZBlock, ZBlock, ZBlock, ZBlock}
 
+/*
+	-----------Randomizers-----------
+*/
+var Queue [5]int
+var QueueHead int = 0
+var random = rand.New((rand.NewSource(time.Now().UnixNano())))
+
 func InitQueue() {
 	for i := 0; i < 5; i++ {
-		Queue[i] = random.Int() % 7
+		Queue[i] = sevenBag()
 	}
 }
 
@@ -220,12 +224,58 @@ func randBlock() int {
 	return random.Int() % 7
 }
 
+// Retuns a random block type. Values range between 0 and 6
+/*
 func PopQueue() int {
 	newBlock := Queue[QueueHead]
 	Queue[QueueHead] = randBlock()
 	QueueHead = (QueueHead + 1) % 5
 	return newBlock
 }
+*/
+func PopQueue() int {
+	newBlock := Queue[QueueHead]
+	Queue[QueueHead] = sevenBag()
+	QueueHead = (QueueHead + 1) % 5
+	return newBlock
+}
+
+var bagHolder [7]int
+var bagCnt int
+
+func printBag() {
+	fmt.Print("Bag: ")
+	for i := 0; i < 7; i++ {
+		fmt.Print(" ", bagHolder[i])
+	}
+	fmt.Println()
+}
+
+// Generates 7 random blocks over the course of each call to sevenBag()
+func sevenBag() int {
+	if bagCnt == 7 {
+		bagCnt--
+		for bagCnt >= 0 {
+			bagHolder[bagCnt] = 0
+			bagCnt--
+		}
+		bagCnt++
+	}
+
+	r := randBlock()
+
+	for bagHolder[r] == 1 {
+
+		r = (r + 1) % 7
+	}
+
+	bagHolder[r] = 1
+	bagCnt++
+
+	return r
+}
+
+// -----------------------------------
 
 // Given a row number all rows above it will shift down by 1
 // 1 <= row <= BoardHeight - 1

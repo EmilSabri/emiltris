@@ -84,10 +84,15 @@ func drawQueue(imd *imdraw.IMDraw) {
 	imd.Push(pixel.V(0, 0), pixel.V(float64(6*cellwidth), float64(15*cellwidth)))
 	imd.Rectangle(0)
 	imd.Color = colornames.Purple
+	fmt.Println("Head: ", tetris.QueueHead, " Queue: ", tetris.Queue)
+
+	j := 4
 	for i := 0; i < 5; i++ {
-		b := tetris.Blocks[(i+tetris.QueueHead)%5]
-		b_struct := tetris.Block{b[0], 2, i*3 + 1, 0}
-		drawBlock(b_struct, imd)
+		q := tetris.Queue[(i+tetris.QueueHead)%5]
+		bType := tetris.Blocks[q][0]
+		b := tetris.Block{bType, 2, j*3 + 1, 0}
+		j--
+		drawBlock(b, imd)
 	}
 }
 
@@ -186,7 +191,7 @@ func run() {
 
 	drawQueue(imdQueue)
 	imdQueue.Draw(queueCanv)
-	queueCanv.Draw(gameCanv, pixel.IM.Moved(pixel.Vec{480, 520}))
+	queueCanv.Draw(gameCanv, pixel.IM.Moved(pixel.Vec{480, 300}))
 
 	drawSwapped(swappedBlock, imdSwapped, xMax, 0)
 	imdSwapped.Draw(gameCanv)
@@ -268,7 +273,7 @@ func run() {
 
 			drawQueue(imdQueue)
 			imdQueue.Draw(queueCanv)
-			queueCanv.Draw(gameCanv, pixel.IM.Moved(pixel.Vec{480, 520}))
+			queueCanv.Draw(gameCanv, pixel.IM.Moved(pixel.Vec{480, 300}))
 		} else if win.Pressed(pixelgl.KeyDown) { // Soft drop -- Change later to adjust for settings
 			curBlock.MoveDown(-1)
 		}
