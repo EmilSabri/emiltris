@@ -1,6 +1,14 @@
 # emiltris
 A tetris clone of jstris but with Emil's spin on things
 
+# Installation
+Check out https://github.com/faiface/pixel on installing the correct libraries 
+after that...
+git install github.com/EmilSabri/emiltris
+cd emiltris
+go install ./...
+
+
 # Todo
 0. Implement Arika Rotation System (ARS) - https://tetris.wiki/Super_Rotation_System
 1. Board Clearing - ALMOST THERE
