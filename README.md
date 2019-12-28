@@ -2,7 +2,7 @@
 A tetris clone of jstris but with Emil's spin on things
 
 # Todo
-0. Learn some design to make this README not look like trash
+0. Implement Arika Rotation System (ARS) - https://tetris.wiki/Super_Rotation_System
 1. Board Clearing - ALMOST THERE
 2. Block Shadow
 3. Bag Randomization - 7Bag and CLassic
