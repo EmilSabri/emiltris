@@ -2,11 +2,11 @@
 A tetris clone of jstris but with Emil's spin on things
 
 # Installation
-Check out https://github.com/faiface/pixel on installing the correct libraries 
-after that...
-git install github.com/EmilSabri/emiltris
-cd emiltris
-go install ./...
+Check out https://github.com/faiface/pixel on installing the correct libraries  
+after that...  
+git install github.com/EmilSabri/emiltris  
+cd emiltris  
+go install ./...  
 
 
 # Todo
