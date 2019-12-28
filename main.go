@@ -19,7 +19,7 @@ import (
 
 var cellwidth int = 34
 
-var blockColors [7]color.RGBA = [...]color.RGBA{colornames.Lightblue, colornames.Yellow, colornames.Purple, colornames.Green, colornames.Red, colornames.Orange, colornames.Blue}
+var blockColors [7]color.RGBA = [...]color.RGBA{colornames.Lightblue, colornames.Yellow, colornames.Purple, colornames.Green, colornames.Red, colornames.Blue, colornames.Orange}
 
 type Cell struct {
 	x, y  int
@@ -153,22 +153,6 @@ func run() {
 	imdBoard := imdraw.New(nil)
 	drawBoard(imdBoard, 21)
 
-	/*for i := 0; i < 20; i++ {
-		for j := 0; j < 10; j++ {
-			x := j * cellwidth // + int((gameCanv.Bounds().Max.X / float64(2))) - cellwidth*5
-			y := i * cellwidth
-			imdBoard.Push(pixel.V(float64(x), float64(y)), pixel.V(float64(x+cellwidth), float64(y)))
-			imdBoard.Line(3)
-			imdBoard.Push(pixel.V(float64(x+cellwidth), float64(y)), pixel.V(float64(x+cellwidth), float64(y+cellwidth)))
-			imdBoard.Line(3)
-			imdBoard.Push(pixel.V(float64(x), float64(y)), pixel.V(float64(x), float64(y+cellwidth)))
-			imdBoard.Line(3)
-			imdBoard.Push(pixel.V(float64(x), float64(y+cellwidth)), pixel.V(float64(x+cellwidth), float64(y+cellwidth)))
-			imdBoard.Line(3)
-		}
-	}
-	*/
-
 	imdCells := imdraw.New(nil)
 	cells := list.New()
 
@@ -208,7 +192,7 @@ func run() {
 	imdSwapped.Draw(gameCanv)
 
 	for !win.Closed() {
-		imdBoard.Draw(gameCanv)
+
 		imdBlock := imdraw.New(nil)
 		imdBlock.Reset()
 		imdBlock.Color = blockColors[curBlockType]
@@ -218,7 +202,7 @@ func run() {
 		frames++
 		select {
 		case <-drop_tick:
-			curBlock.MoveDown(0)
+			curBlock.MoveDown(-1)
 		case <-second:
 			win.SetTitle(fmt.Sprintf("%s | FPS: %d", cfg.Title, frames))
 			frames = 0
@@ -235,8 +219,7 @@ func run() {
 
 		// Rotation
 		if win.JustPressed(pixelgl.KeyUp) {
-			curBlock.R = (curBlock.R + 1) % 4
-			curBlock.Piece = tetris.Blocks[curBlockType][curBlock.R]
+			curBlock.Rotate(curBlockType)
 		}
 
 		// Hard drop
@@ -268,6 +251,9 @@ func run() {
 				}
 
 				// Update the board above the cells with empty
+				fmt.Println("Rows Cleared: ", rows)
+				tetris.PrintBoard()
+				fmt.Println("\n")
 				drawBoard(imdCells, 21)
 				// fmt.Println("Len After:", cells.Len())
 				// Draw every point in cells to imdCells
@@ -313,6 +299,7 @@ func run() {
 			fmt.Println("Shift!")
 		}
 
+		imdBoard.Draw(gameCanv)
 		imdCells.Draw(gameCanv)        // The cells currently placed on the board
 		drawBlock(*curBlock, imdBlock) // Used for drawing the current block as it drops/moves
 		imdBlock.Draw(gameCanv)

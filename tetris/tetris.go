@@ -166,29 +166,29 @@ var JBlock3 = [4]image.Point{
 var LBlock0 = [4]image.Point{
 	image.Pt(0, 0),
 	image.Pt(-1, 0),
+	image.Pt(-1, 1),
 	image.Pt(1, 0),
-	image.Pt(1, 1),
 }
 
 var LBlock1 = [4]image.Point{
 	image.Pt(0, 0),
-	image.Pt(1, 0),
 	image.Pt(0, 1),
-	image.Pt(0, 2),
+	image.Pt(1, 1),
+	image.Pt(0, -1),
 }
 
 var LBlock2 = [4]image.Point{
+	image.Pt(0, 0),
 	image.Pt(-1, 0),
-	image.Pt(-1, 1),
-	image.Pt(0, 1),
-	image.Pt(1, 1),
+	image.Pt(1, 0),
+	image.Pt(1, -1),
 }
 
 var LBlock3 = [4]image.Point{
 	image.Pt(0, 0),
 	image.Pt(0, 1),
-	image.Pt(0, 2),
-	image.Pt(-1, 2),
+	image.Pt(0, -1),
+	image.Pt(-1, -1),
 }
 
 type Block struct {
@@ -285,7 +285,7 @@ func (b *Block) ClearBoard() []int {
 }
 
 //------------------------------------------
-// Checks if the given block can move
+// Checks if the given block can move based on it's points
 // left: -1
 // right: 1
 // down: 2
@@ -300,14 +300,14 @@ func checkMove(b *Block, move int) bool {
 	} else if move == 1 {
 		for _, point := range b.Piece {
 			x, y := point.X+b.X, point.Y+b.Y
-			if x >= boardWidth || board[y][x+1] == true {
+			if x >= boardWidth-1 || board[y][x+1] == true {
 				return false
 			}
 		}
 	} else {
 		for _, point := range b.Piece {
 			x, y := point.X+b.X, point.Y+b.Y
-			if y <= 0 || board[y+1][x] == true {
+			if y <= 0 || board[y-1][x] == true {
 				return false
 			}
 		}
@@ -333,16 +333,20 @@ func (b *Block) MoveDown(speed int) {
 	}
 }
 
-func updateActiveRow(b *Block) {
-	for _, point := range b.Piece {
-		y := point.Y + b.Y
-		if y > activeRow {
-			activeRow = y
-		}
+// Moves the block to the lowest row possible
+func (b *Block) HardDrop() {
+	prevY := b.Y
+	b.MoveDown(-1)
+	for prevY-b.Y != 0 {
+		prevY = b.Y
+		b.MoveDown(-1)
 	}
+
+	updateActiveRow(b)
+	paintBoard(b)
 }
 
-// Moves the block to the lowest row possible
+/*
 func (b *Block) HardDrop() {
 	deltaY := b.Y + 5
 	for _, point := range b.Piece {
@@ -379,6 +383,141 @@ func (b *Block) HardDrop() {
 
 	paintBoard(b)
 }
+*/
+
+func (b *Block) Rotate(bType int) {
+	b.wallKick(bType)
+}
+
+var testRotate0 = [5]image.Point{
+	image.Pt(0, 0),
+	image.Pt(-1, 0),
+	image.Pt(-1, 1),
+	image.Pt(0, -2),
+	image.Pt(-1, -2),
+}
+
+var testRotate1 = [5]image.Point{
+	image.Pt(0, 0),
+	image.Pt(1, 0),
+	image.Pt(1, -1),
+	image.Pt(0, 2),
+	image.Pt(1, 2),
+}
+
+var testRotate2 = [5]image.Point{
+	image.Pt(0, 0),
+	image.Pt(1, 0),
+	image.Pt(1, 1),
+	image.Pt(0, -2),
+	image.Pt(1, -2),
+}
+
+var testRotate3 = [5]image.Point{
+	image.Pt(0, 0),
+	image.Pt(-1, 0),
+	image.Pt(-1, -1),
+	image.Pt(0, 2),
+	image.Pt(-1, 2),
+}
+
+var wallKickDataMany = [4][5]image.Point{testRotate0, testRotate1, testRotate2, testRotate3}
+
+var testRotateI0 = [5]image.Point{
+	image.Pt(0, 0),
+	image.Pt(-2, 0),
+	image.Pt(1, 0),
+	image.Pt(-2, -1),
+	image.Pt(1, 2),
+}
+
+var testRotateI1 = [5]image.Point{
+	image.Pt(0, 0),
+	image.Pt(-1, 0),
+	image.Pt(2, 0),
+	image.Pt(-1, 2),
+	image.Pt(2, 1),
+}
+
+var testRotateI2 = [5]image.Point{
+	image.Pt(0, 0),
+	image.Pt(2, 0),
+	image.Pt(-1, 0),
+	image.Pt(2, 1),
+	image.Pt(-1, -2),
+}
+
+var testRotateI3 = [5]image.Point{
+	image.Pt(0, 0),
+	image.Pt(1, 0),
+	image.Pt(-2, 0),
+	image.Pt(1, -2),
+	image.Pt(-2, 1),
+}
+
+var wallKickDataI = [4][5]image.Point{testRotateI0, testRotateI1, testRotateI2, testRotateI3}
+
+/*
+The wall kick data used in wallKickDataI and wallKickDataMany was extracted from https://tetris.wiki/Super_Rotation_System.
+The tables are comprised as 0 -> R, R->2, 2->L, L->0
+*/
+
+// Test rotation for possible wall kicks
+func (b *Block) wallKick(bType int) {
+	var wallKickData [4][5]image.Point
+	switch bType {
+	case 0:
+		wallKickData = wallKickDataI
+	default:
+		wallKickData = wallKickDataMany // For blocks other than I (excluding O block)
+	}
+
+	// Temporary block is used to test the 5 rotation test cases
+	tempBlock := NewBlock(bType, b.X, b.Y, rotateBlock(b.R))
+
+	for _, testPt := range wallKickData[b.R] { // [b.R] is the initial rotation state
+		tempBlock.X, tempBlock.Y = b.X+testPt.X, b.Y+testPt.Y
+		if checkRotation(tempBlock) {
+			b.Piece = tempBlock.Piece
+			b.X, b.Y = tempBlock.X, tempBlock.Y
+			b.R = tempBlock.R
+			break
+		}
+	}
+}
+
+// Checks if the block's current rotation state and X/Y is out of
+// bounds or colliding with other blocks.
+func checkRotation(b *Block) bool {
+	for _, point := range b.Piece {
+		x, y := point.X+b.X, point.Y+b.Y
+
+		if x < 0 || x >= boardWidth-1 { // Test x or y is out of the board
+			return false
+		}
+		if y < 0 || y >= boardHeight {
+			return false
+		}
+		if board[y][x] == true { // Tests collision with blocks
+			return false
+		}
+	}
+
+	return true
+}
+
+func rotateBlock(r int) int {
+	return (r + 1) % 4
+}
+
+func updateActiveRow(b *Block) {
+	for _, point := range b.Piece {
+		y := point.Y + b.Y
+		if y > activeRow {
+			activeRow = y
+		}
+	}
+}
 
 // Does work when a block lands and returns a new block for the player
 func (b *Block) Landed() int {
@@ -393,7 +532,7 @@ func (b *Block) Landed() int {
 // ---------------------------
 
 func NewBlock(bType, x, y, r int) *Block {
-	return &Block{Blocks[bType][0], x, y, r}
+	return &Block{Blocks[bType][r], x, y, r}
 }
 
 // Draws the pieces to the board state
