@@ -11,7 +11,7 @@ go install ./...
 
 # Todo
 * Implement Arika Rotation System (ARS) - https://tetris.wiki/Super_Rotation_System
-* Board Clearing - ALMOST THERE
+* ~~Board Clearing - ALMOST THERE~~
 * Block Shadow
 * ~~Bag Randomization - 7Bag~~
 * Fluid movement
