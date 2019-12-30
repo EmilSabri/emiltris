@@ -280,18 +280,20 @@ func sevenBag() int {
 // Given a row number all rows above it will shift down by 1
 // 1 <= row <= BoardHeight - 1
 func clear(row int) {
+	fmt.Println("Row: ", row)
 	if row == 19 { // Very top most row will having nothing to shift. Set all cells to false
 		for i := 0; i < boardWidth; i++ {
 			board[row][i] = false
 		}
 	} else {
-		for y := row; y <= 18; y++ {
+		for y := row; y < 19; y++ {
 			for x := 0; x < boardWidth; x++ {
+				fmt.Print("X:", x)
 				board[y][x] = board[y+1][x]
 			}
 		}
 	}
-
+	fmt.Println()
 	if activeRow > 0 {
 		activeRow--
 	}
@@ -302,23 +304,27 @@ func (b *Block) ClearBoard() []int {
 	var cleared_rows []int
 
 	// Get rows where the block landed
-	lower := b.Piece[0].Y
-	higher := lower
-	for _, point := range b.Piece {
-		if point.Y < lower {
-			lower = point.Y
-		}
-		if point.Y > higher {
-			higher = point.Y
-		}
-	}
+	//lower := b.Piece[0].Y
+	//lower := b.Piece[b.R].Y
+	//higher := lower
+	/*
+		for _, point := range b.Piece {
 
+			if point.Y < lower {
+				lower = point.Y
+			}
+			if point.Y > higher {
+				higher = point.Y
+			}
+		}
+	*/
 	//fmt.Println("lower", lower, "higher", higher)
 	// Check which rows can be cleared
-	for y := lower; y <= higher; y++ {
+	//for y := lower; y <= higher; y++ {
+	for y := 19; y >= 0; y-- {
 		cnt := 0
 		for x := 0; x < boardWidth; x++ {
-			if board[y+b.Y][x] == true {
+			if board[y][x] == true {
 				cnt++
 			}
 		}

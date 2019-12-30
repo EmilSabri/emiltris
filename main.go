@@ -84,7 +84,6 @@ func drawQueue(imd *imdraw.IMDraw) {
 	imd.Push(pixel.V(0, 0), pixel.V(float64(6*cellwidth), float64(15*cellwidth)))
 	imd.Rectangle(0)
 	imd.Color = colornames.Purple
-	fmt.Println("Head: ", tetris.QueueHead, " Queue: ", tetris.Queue)
 
 	j := 4
 	for i := 0; i < 5; i++ {
@@ -259,14 +258,14 @@ func run() {
 				fmt.Println("Rows Cleared: ", rows)
 				tetris.PrintBoard()
 				fmt.Println("\n")
-				drawBoard(imdCells, 21)
+
 				// fmt.Println("Len After:", cells.Len())
 				// Draw every point in cells to imdCells
 				for cell := cells.Front(); cell != nil; cell = cell.Next() {
 					fmt.Println("Cell: (", cell.X, ", ", cell.Y, ") ")
 				}
 			}
-
+			drawBoard(imdCells, 21)
 			drawCells(&cells, imdCells)
 			curBlockType = curBlock.Landed()
 			curBlock = tetris.NewBlock(curBlockType, 5, 18, 0)
@@ -293,6 +292,7 @@ func run() {
 				curBlock.X, curBlock.Y = 5, 18
 			}
 			swappedBlock.X, swappedBlock.Y = 2, 2
+			swappedBlock.R = 0
 
 			// Swap slows is bottle neck in performance
 			drawSwapped(swappedBlock, imdSwapped, xMax, 0)
