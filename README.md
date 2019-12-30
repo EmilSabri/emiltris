@@ -25,4 +25,4 @@ go install ./...
 *  Polish game - Performance, code, visuals
 
 # Current issuses
-Todo 1 - Board clearing crashes on rows > o and len(rows) > 1
+* Board clearing visuals don't update correctly sometimes
