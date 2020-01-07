@@ -49,6 +49,18 @@ func drawBlock(block tetris.Block, imd *imdraw.IMDraw) {
 	}
 }
 
+func drawShadow(imdShadow *imdraw.IMDraw, gameCanv *pixelgl.Canvas, curBlock *tetris.Block, curBlockType int) {
+	temp := tetris.CopyBlock(curBlock, curBlockType)
+	temp.PseudoHardDrop()
+
+	imdShadow.Reset()
+	drawBoard(imdShadow, 21)
+	imdShadow.Color = blockColors[curBlockType]
+	drawBlock(*temp, imdShadow)
+	//imdBlock.Draw(gameCanv)
+	imdShadow.Draw(gameCanv)
+}
+
 func drawCells(cells *list.List, imdCells *imdraw.IMDraw) {
 	for cell := cells.Front(); cell != nil; cell = cell.Next() {
 		imdCells.Color = cell.Color
@@ -174,11 +186,20 @@ func run() {
 	imdSwapped := imdraw.New(nil)
 	swappedBlock := &tetris.Block{R: -1}
 	var swappedBlockType int
+
+	// Shadow
+	imdShadow := imdraw.New(nil)
+
 	// ----------------------
 	// Convert into function
 	// Draw blocks
 	curBlockType := tetris.PopQueue()
 	curBlock := tetris.NewBlock(curBlockType, 5, 18, 0)
+
+	temp := tetris.CopyBlock(curBlock, curBlockType)
+	fmt.Println("Temp Before:", temp.X, temp.Y)
+	temp.PseudoHardDrop()
+	fmt.Println("Temp After:", temp.X, temp.Y)
 
 	// ------------------------------
 	drop_tick := time.Tick(925 * time.Millisecond)
@@ -194,6 +215,8 @@ func run() {
 
 	drawSwapped(swappedBlock, imdSwapped, xMax, 0)
 	imdSwapped.Draw(gameCanv)
+
+	drawShadow(imdShadow, gameCanv, curBlock, curBlockType)
 
 	for !win.Closed() {
 
@@ -217,27 +240,30 @@ func run() {
 		// Movement left/right
 		if win.JustPressed(pixelgl.KeyLeft) {
 			curBlock.MoveLeft()
+			drawShadow(imdShadow, gameCanv, curBlock, curBlockType)
+
 		} else if win.JustPressed(pixelgl.KeyRight) {
 			curBlock.MoveRight()
+			drawShadow(imdShadow, gameCanv, curBlock, curBlockType)
 		}
 
 		// Rotation
 		if win.JustPressed(pixelgl.KeyUp) {
 			curBlock.Rotate(curBlockType)
+			drawShadow(imdShadow, gameCanv, curBlock, curBlockType)
 		}
 
 		// Hard drop
 		if win.JustPressed(pixelgl.KeySpace) {
 			curBlock.HardDrop()
 			insertCells(curBlock, curBlockType, &cells)
-
 			rows := curBlock.ClearBoard() // make tetris.ClearBoard a method
 
+			// Clears any rows if possible
 			if rows != nil {
 				imdCells.Reset()
 				fmt.Println("Rows Cleared:", rows)
-				//fmt.Println("Len Before:", cells.Len())
-				// turn into function call
+
 				for cell := cells.Front(); cell != nil; cell = cell.Next() {
 					for _, r := range rows {
 						if cell.Y == r { // Remove cells if they're in the same row as rows
@@ -265,14 +291,18 @@ func run() {
 					fmt.Println("Cell: (", cell.X, ", ", cell.Y, ") ")
 				}
 			}
-			drawBoard(imdCells, 21)
-			drawCells(&cells, imdCells)
+
+			//drawBoard(imdCells, 21)
+
 			curBlockType = curBlock.Landed()
 			curBlock = tetris.NewBlock(curBlockType, 5, 18, 0)
 
 			drawQueue(imdQueue)
 			imdQueue.Draw(queueCanv)
 			queueCanv.Draw(gameCanv, pixel.IM.Moved(pixel.Vec{480, 300}))
+
+			drawShadow(imdShadow, gameCanv, curBlock, curBlockType)
+			drawCells(&cells, imdCells)
 		} else if win.Pressed(pixelgl.KeyDown) { // Soft drop -- Change later to adjust for settings
 			curBlock.MoveDown(-1)
 		}
@@ -298,6 +328,8 @@ func run() {
 			drawSwapped(swappedBlock, imdSwapped, xMax, 0)
 			imdSwapped.Draw(gameCanv)
 
+			drawShadow(imdShadow, gameCanv, curBlock, curBlockType)
+
 			//fmt.Println("ActiveRow: ", tetris.GetActiveRow())
 			//tetris.PrintBoard()
 
@@ -305,14 +337,10 @@ func run() {
 		}
 
 		imdBoard.Draw(gameCanv)
+		imdShadow.Draw(gameCanv)
 		imdCells.Draw(gameCanv)        // The cells currently placed on the board
 		drawBlock(*curBlock, imdBlock) // Used for drawing the current block as it drops/moves
 		imdBlock.Draw(gameCanv)
-		//drawQueue(imdQueue)
-		//imdQueue.Draw(queueCanv)
-		//queueCanv.Draw(gameCanv, pixel.IM.Moved(pixel.Vec{480, 520}))
-		//drawSwapped(swappedBlock, imdSwapped, xMax, 0)
-		//imdSwapped.Draw(gameCanv)
 
 		gameCanv.Draw(win, pixel.IM.Moved(win.Bounds().Center()))
 		win.Update()
