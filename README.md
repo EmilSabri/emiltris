@@ -11,7 +11,7 @@ go install ./...
 
 # Todo
 * Implement Arika Rotation System (ARS) - https://tetris.wiki/Super_Rotation_System
-* Board Clearing - ALMOST THERE
+* ~~Board Clearing - ALMOST THERE~~
 * Block Shadow
 * ~~Bag Randomization - 7Bag~~
 * Fluid movement
@@ -25,4 +25,4 @@ go install ./...
 *  Polish game - Performance, code, visuals
 
 # Current issuses
-Todo 1 - Board clearing crashes on rows > o and len(rows) > 1
+* Board clearing visuals don't update correctly sometimes
